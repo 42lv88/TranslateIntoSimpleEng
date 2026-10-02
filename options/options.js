@@ -7,7 +7,7 @@ const DEFAULT_SETTINGS = {
   model: "gemma2:2b",
   provider: "ollama",
   temperature: 0.1,
-  systemPrompt: "You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Do not write 'Sure', 'Here is', 'Simplified text:', 'Of course' or any similar phrase. Start your response with the first word of the simplified text directly.",
+  systemPrompt: "Do not use 'Sure, here is the simplified text:' or any other prefix. You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Start your response with the first word of the simplified text directly.",
   replacementMode: "replace",
   showFloatingButton: true,
   autoSimplify: false

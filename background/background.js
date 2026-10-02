@@ -7,7 +7,7 @@ const DEFAULT_SETTINGS = {
   model: "gemma2:2b",
   provider: "ollama",
   temperature: 0.1,
-  systemPrompt: "You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Do not write 'Sure', 'Here is', 'Simplified text:', 'Of course' or any similar phrase. Start your response with the first word of the simplified text directly.",
+  systemPrompt: "Do not use 'Sure, here is the simplified text:' or any other prefix. You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Start your response with the first word of the simplified text directly.",
   replacementMode: "replace",
   showFloatingButton: true,
   autoSimplify: false
@@ -453,9 +453,10 @@ chrome.runtime.onInstalled.addListener(() => {
       updates.temperature = 0.1;
     }
 
-    // Update system prompt if it's the old generic version
-    if (items.systemPrompt && items.systemPrompt.startsWith("Simplify the following text")) {
+    // Update system prompt if it doesn't start with the new prefix instruction
+    if (!items.systemPrompt || !items.systemPrompt.startsWith("Do not use 'Sure, here is the simplified text:'")) {
       updates.systemPrompt = DEFAULT_SETTINGS.systemPrompt;
+      console.log("[SimpleEN] Migrated system prompt to include prefix restriction");
     }
 
     if (Object.keys(updates).length > 0) {
