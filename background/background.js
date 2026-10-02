@@ -207,14 +207,15 @@ function cleanSimplifiedText(rawText) {
 // Call Ollama / Local API
 async function callLocalLLM(text, settings) {
   const endpoint = settings.endpoint.replace(/\/+$/, "");
-  const model = settings.model || "gemma:2b";
+  const model = settings.model || "gemma2:2b";
   const systemPrompt = settings.systemPrompt || DEFAULT_SETTINGS.systemPrompt;
-  const temperature = settings.temperature !== undefined ? parseFloat(settings.temperature) : 0.2;
+  const temperature = settings.temperature !== undefined ? parseFloat(settings.temperature) : 0.1;
 
   let url = "";
   let payload = {};
 
   if (settings.provider === "openai_compatible") {
+    // OpenAI-compatible API (LM Studio, LocalAI, etc.)
     url = `${endpoint}/v1/chat/completions`;
     payload = {
       model: model,
@@ -222,14 +223,19 @@ async function callLocalLLM(text, settings) {
         { role: "system", content: systemPrompt },
         { role: "user", content: text }
       ],
-      temperature: temperature
+      temperature: temperature,
+      stream: false
     };
   } else {
-    // Default Ollama Native API: /api/generate
-    url = `${endpoint}/api/generate`;
+    // Ollama Native Chat API — /api/chat properly handles system prompts
+    // for instruction-tuned models like gemma2:2b (unlike /api/generate)
+    url = `${endpoint}/api/chat`;
     payload = {
       model: model,
-      prompt: `${systemPrompt}\n\nOriginal Text:\n${text}\n\nSimplified Text:`,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: text }
+      ],
       stream: false,
       options: {
         temperature: temperature
@@ -283,9 +289,12 @@ async function callLocalLLM(text, settings) {
     let rawOutput = "";
 
     if (settings.provider === "openai_compatible") {
-      rawOutput = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "";
+      // OpenAI: { choices: [{ message: { content: "..." } }] }
+      rawOutput = data.choices?.[0]?.message?.content || "";
     } else {
-      rawOutput = data.response || "";
+      // Ollama /api/chat: { message: { role: "assistant", content: "..." } }
+      // Ollama /api/generate (legacy fallback): { response: "..." }
+      rawOutput = data.message?.content || data.response || "";
     }
 
     const cleaned = cleanSimplifiedText(rawOutput);
@@ -422,11 +431,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Extension installed / updated setup
+// Extension installed / updated setup — also migrates stale settings
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get(null, (items) => {
+    const updates = {};
+
+    // First-time install: write all defaults
     if (Object.keys(items).length === 0) {
       chrome.storage.sync.set(DEFAULT_SETTINGS);
+      return;
+    }
+
+    // Migrate stale model name: gemma:2b → gemma2:2b
+    if (items.model === "gemma:2b" || items.model === "gemma2b") {
+      updates.model = "gemma2:2b";
+      console.log("[SimpleEN] Migrated model setting: gemma:2b → gemma2:2b");
+    }
+
+    // Ensure temperature is updated to 0.1 if it was the old 0.2 default
+    if (items.temperature === 0.2) {
+      updates.temperature = 0.1;
+    }
+
+    // Update system prompt if it's the old generic version
+    if (items.systemPrompt && items.systemPrompt.startsWith("Simplify the following text")) {
+      updates.systemPrompt = DEFAULT_SETTINGS.systemPrompt;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      chrome.storage.sync.set(updates);
+      console.log("[SimpleEN] Settings migrated:", updates);
     }
   });
 });
