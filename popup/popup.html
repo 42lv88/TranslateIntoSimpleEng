@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple English Translator</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <span class="logo-icon">⚡</span>
+        <div>
+          <h1 class="title">Simple English</h1>
+          <span class="subtitle">Gemma 2B Local Translator</span>
+        </div>
+      </div>
+      <button id="openOptionsBtn" class="icon-btn" title="Open Settings">⚙️</button>
+    </header>
+
+    <!-- Model Status Card -->
+    <section class="status-card" id="statusCard">
+      <div class="status-indicator">
+        <span class="status-dot status-offline" id="statusDot"></span>
+        <span class="status-text" id="statusText">Checking Gemma 2B status...</span>
+      </div>
+      <button id="refreshHealthBtn" class="icon-btn-sm" title="Recheck Connection">🔄</button>
+    </section>
+
+    <!-- Primary Actions -->
+    <section class="action-section">
+      <button id="simplifyPageBtn" class="btn btn-primary">
+        <span class="btn-icon">⚡</span>
+        <span>Simplify Current Page</span>
+      </button>
+
+      <button id="restorePageBtn" class="btn btn-secondary">
+        <span class="btn-icon">↩️</span>
+        <span>Restore Original Text</span>
+      </button>
+    </section>
+
+    <!-- Quick Settings Controls -->
+    <section class="controls-section">
+      <h2 class="section-title">Quick Controls</h2>
+
+      <div class="control-row">
+        <label for="floatingBtnToggle" class="control-label">
+          <span>Floating Selection Button</span>
+          <span class="control-desc">Show 'Simplify' button when selecting text</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="floatingBtnToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="control-row">
+        <label for="replacementModeSelect" class="control-label">
+          <span>Translation Style</span>
+          <span class="control-desc">How simplified text is displayed</span>
+        </label>
+        <select id="replacementModeSelect" class="select-input">
+          <option value="replace">Replace in-place</option>
+          <option value="side_by_side">Side-by-side</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span id="modelInfoText">Model: gemma:2b</span>
+      <a href="#" id="clearCacheLink" class="footer-link">Clear Cache</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

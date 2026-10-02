@@ -1,0 +1,223 @@
+/* Content styles for Simple English Translator (Gemma 2B) */
+
+.simple-eng-ui {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  box-sizing: border-box !important;
+  z-index: 2147483647 !important; /* Maximum z-index to stay above web page elements */
+}
+
+.simple-eng-hidden {
+  display: none !important;
+}
+
+/* Floating Action Button for Text Selection */
+.simple-eng-floating-btn {
+  position: absolute !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border-radius: 20px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid #334155 !important;
+  transition: transform 0.15s ease, background 0.15s ease !important;
+  user-select: none !important;
+}
+
+.simple-eng-floating-btn:hover {
+  background: #0f172a !important;
+  transform: translateY(-2px) scale(1.03) !important;
+}
+
+.simple-eng-btn-icon {
+  font-size: 14px !important;
+  color: #f59e0b !important;
+}
+
+/* Tooltip Popup */
+.simple-eng-tooltip {
+  position: absolute !important;
+  width: 360px !important;
+  max-width: 90vw !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 14px !important;
+  color: #1e293b !important;
+  animation: simpleEngFadeIn 0.2s ease-out !important;
+}
+
+@keyframes simpleEngFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.simple-eng-tooltip-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 10px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+.simple-eng-tooltip-title {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #2563eb !important;
+}
+
+.simple-eng-tooltip-close {
+  background: transparent !important;
+  border: none !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+}
+
+.simple-eng-tooltip-close:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.simple-eng-tooltip-body {
+  min-height: 50px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #334155 !important;
+}
+
+.simple-eng-spinner-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  color: #64748b !important;
+  font-size: 13px !important;
+}
+
+.simple-eng-spinner {
+  width: 18px !important;
+  height: 18px !important;
+  border: 2px solid #cbd5e1 !important;
+  border-top-color: #2563eb !important;
+  border-radius: 50% !important;
+  animation: simpleEngSpin 0.7s linear infinite !important;
+}
+
+@keyframes simpleEngSpin {
+  to { transform: rotate(360deg); }
+}
+
+.simple-eng-tooltip-footer {
+  display: flex !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+.simple-eng-btn {
+  flex: 1 !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.simple-eng-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.simple-eng-btn-replace {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #1d4ed8 !important;
+}
+
+.simple-eng-btn-replace:hover {
+  background: #1d4ed8 !important;
+}
+
+/* Page Element Translation Styles */
+.simple-eng-loading-element {
+  opacity: 0.6 !important;
+  position: relative !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.simple-eng-translated-element {
+  background-color: rgba(239, 246, 255, 0.6) !important;
+  border-left: 3px solid #3b82f6 !important;
+  padding-left: 8px !important;
+  border-radius: 4px !important;
+  transition: all 0.3s ease !important;
+}
+
+.simple-eng-badge {
+  display: inline-block !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  margin-right: 6px !important;
+  vertical-align: middle !important;
+  letter-spacing: 0.5px !important;
+}
+
+.simple-eng-original-block {
+  opacity: 0.6;
+  text-decoration: line-through;
+  font-size: 0.9em;
+  margin-bottom: 4px;
+}
+
+.simple-eng-side-block {
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Toast Notifications */
+.simple-eng-toast {
+  position: fixed !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  color: #ffffff !important;
+  transition: transform 0.25s ease, opacity 0.25s ease !important;
+}
+
+.simple-eng-toast-info { background: #1e293b !important; }
+.simple-eng-toast-success { background: #16a34a !important; }
+.simple-eng-toast-warning { background: #d97706 !important; }
+.simple-eng-toast-error { background: #dc2626 !important; }
+
+.simple-eng-toast.simple-eng-show {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.simple-eng-error {
+  color: #dc2626 !important;
+  font-size: 13px !important;
+}

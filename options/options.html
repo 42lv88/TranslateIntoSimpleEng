@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extension Settings - Simple English Translator (Gemma 2B)</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="options-container">
+    <header class="header">
+      <div class="header-title">
+        <span class="logo">⚡</span>
+        <h1>Simple English Translator Settings</h1>
+      </div>
+      <p class="subtitle">Configure your local Gemma 2B model endpoint, translation preferences, and prompts.</p>
+    </header>
+
+    <form id="settingsForm">
+      <!-- Section 1: Local Model Connection -->
+      <div class="card">
+        <h2>Local LLM Backend Settings</h2>
+        
+        <div class="form-group">
+          <label for="endpoint">API Endpoint URL</label>
+          <input type="url" id="endpoint" placeholder="http://localhost:11434" required>
+          <small>Default for Ollama is <code>http://localhost:11434</code></small>
+        </div>
+
+        <div class="form-group">
+          <label for="provider">API Provider Type</label>
+          <select id="provider">
+            <option value="ollama">Ollama Native API (/api/generate)</option>
+            <option value="openai_compatible">OpenAI Compatible API (/v1/chat/completions)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="modelSelect">Target Model Name</label>
+          <div class="input-with-btn">
+            <input type="text" id="modelSelect" placeholder="gemma2:2b" required>
+            <button type="button" id="fetchModelsBtn" class="btn btn-secondary">Fetch Available Models</button>
+          </div>
+          <small>Make sure you have pulled the model using <code>ollama pull gemma2:2b</code></small>
+        </div>
+
+        <div class="form-group">
+          <button type="button" id="testConnBtn" class="btn btn-secondary">Test Connection</button>
+          <span id="connStatus" class="conn-status"></span>
+        </div>
+      </div>
+
+      <!-- Section 2: Model Parameters & Prompt -->
+      <div class="card">
+        <h2>Translation & Prompt Configuration</h2>
+
+        <div class="form-group">
+          <label for="systemPrompt">System Prompt for Simplification</label>
+          <textarea id="systemPrompt" rows="4" placeholder="Enter system prompt instructions..."></textarea>
+          <small>Instructs Gemma 2B how to convert complex text into Simple English without changing meaning.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="temperature">Temperature: <span id="tempValue">0.2</span></label>
+          <input type="range" id="temperature" min="0.0" max="1.0" step="0.05" value="0.2">
+          <small>Lower values (0.1–0.3) produce more consistent, concise simple English translations.</small>
+        </div>
+      </div>
+
+      <!-- Section 3: UI & Behavior Preferences -->
+      <div class="card">
+        <h2>Extension Behavior</h2>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="showFloatingButton">
+            <span>Show floating 'Simplify' button when selecting text on web pages</span>
+          </label>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="autoSimplify">
+            <span>Automatically simplify web page text on page load (Experimental)</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="replacementMode">Default Translation View</label>
+          <select id="replacementMode">
+            <option value="replace">Replace text directly in page</option>
+            <option value="side_by_side">Show side-by-side (Original & Simple EN)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <button type="button" id="resetBtn" class="btn btn-danger">Reset Defaults</button>
+        <span id="saveStatus" class="save-status"></span>
+      </div>
+    </form>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

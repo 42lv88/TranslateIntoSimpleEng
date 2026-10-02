@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "devrelay": {
+      "command": "npx",
+      "args": ["-y", "devrelay", "start"]
+    }
+  }
+}
