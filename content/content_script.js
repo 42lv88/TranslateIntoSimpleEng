@@ -280,7 +280,12 @@
       spinner.style.display = "none";
 
       if (response && response.success) {
-        contentEl.textContent = response.result;
+        // Inject TTS button if enabled
+        const ttsBtnHtml = extensionSettings.elevenLabsEnabled
+          ? `<button class="simple-eng-tts-btn simple-eng-ui" data-tts-text="${escapeAttr(response.result)}" title="Listen (ElevenLabs TTS)" style="float: right; margin-top: -4px;">🔊</button>`
+          : "";
+
+        contentEl.innerHTML = ttsBtnHtml + escapeHtml(response.result);
         contentEl.style.display = "block";
         footer.style.display = "flex";
       } else {
