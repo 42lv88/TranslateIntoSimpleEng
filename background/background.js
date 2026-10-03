@@ -85,7 +85,13 @@ chrome.runtime.onConnect.addListener((port) => {
 
     if (message.action === "SIMPLIFY_TEXT_PORT") {
       const result = await handleSimplifyText(message.text, message.settings);
-      try { port.postMessage({ type: "RESULT", ...result }); } catch (e) {}
+      try { port.postMessage({ type: "RESULT", ...result, id: message.id }); } catch (e) {}
+    }
+
+    if (message.action === "DEFINE_TEXT_PORT") {
+      const settings = await getSettings();
+      const result = await handleDefineText(message.text, settings);
+      try { port.postMessage({ type: "DEFINE_RESULT", ...result, id: message.id }); } catch (e) {}
     }
   });
 });

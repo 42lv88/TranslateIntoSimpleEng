@@ -53,6 +53,11 @@
           delete portCallbacks["single"];
           cb(msg);
         }
+        if (msg.type === "DEFINE_RESULT" && portCallbacks["define"]) {
+          const cb = portCallbacks["define"];
+          delete portCallbacks["define"];
+          cb(msg);
+        }
         if (msg.type === "CHUNK" && portCallbacks["batch_chunk"]) {
           portCallbacks["batch_chunk"](msg.results);
         }
@@ -75,6 +80,15 @@
     if (!p) { callback({ success: false, error: "Extension context lost. Refresh the page." }); return; }
     portCallbacks["single"] = callback;
     try { p.postMessage({ action: "SIMPLIFY_TEXT_PORT", text }); }
+    catch (e) { callback({ success: false, error: e.message }); }
+  }
+
+  // Send a dictionary definition request via port
+  function portDefineText(text, callback) {
+    const p = getPort();
+    if (!p) { callback({ success: false, error: "Extension context lost. Refresh the page." }); return; }
+    portCallbacks["define"] = callback;
+    try { p.postMessage({ action: "DEFINE_TEXT_PORT", text }); }
     catch (e) { callback({ success: false, error: e.message }); }
   }
 
@@ -350,7 +364,7 @@
 
     tooltipEl.classList.remove("simple-eng-hidden");
 
-    safeMessage({ action: "DEFINE_TEXT", text: text }, (response) => {
+    portDefineText(text, (response) => {
       spinner.style.display = "none";
       spinner.querySelector("span").textContent = "Translating with local Gemma 2B..."; // reset
 
