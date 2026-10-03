@@ -48,6 +48,10 @@
         portCallbacks = {};
       });
       port.onMessage.addListener((msg) => {
+        if (msg.type === "PING") {
+          try { port.postMessage({ action: "PONG" }); } catch (e) {}
+          return;
+        }
         if (msg.type === "RESULT" && portCallbacks["single"]) {
           const cb = portCallbacks["single"];
           delete portCallbacks["single"];

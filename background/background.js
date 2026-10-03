@@ -50,7 +50,13 @@ chrome.runtime.onConnect.addListener((port) => {
   activePorts.add(port);
   startKeepAlive();
 
+  // Send a ping every 10s to keep the MV3 service worker active
+  const pingInterval = setInterval(() => {
+    try { port.postMessage({ type: "PING" }); } catch (e) {}
+  }, 10000);
+
   port.onDisconnect.addListener(() => {
+    clearInterval(pingInterval);
     activePorts.delete(port);
     stopKeepAlive();
   });
