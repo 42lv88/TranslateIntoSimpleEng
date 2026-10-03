@@ -10,9 +10,15 @@
   display: none !important;
 }
 
-/* Floating Action Button for Text Selection */
-.simple-eng-floating-btn {
+/* Floating Action Container for Text Selection */
+.simple-eng-floating-container {
   position: absolute !important;
+  display: flex !important;
+  gap: 8px !important;
+  z-index: 2147483647 !important;
+}
+
+.simple-eng-floating-action {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
@@ -29,7 +35,7 @@
   user-select: none !important;
 }
 
-.simple-eng-floating-btn:hover {
+.simple-eng-floating-action:hover {
   background: #0f172a !important;
   transform: translateY(-2px) scale(1.03) !important;
 }

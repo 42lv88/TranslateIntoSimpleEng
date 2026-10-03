@@ -122,13 +122,19 @@
 
   // Create overlay DOM elements
   function createUIElements() {
-    // Floating Selection Button
+    // Floating Selection Button Container
     floatingBtn = document.createElement("div");
-    floatingBtn.id = "simple-eng-floating-btn";
-    floatingBtn.className = "simple-eng-ui simple-eng-floating-btn simple-eng-hidden";
+    floatingBtn.id = "simple-eng-floating-container";
+    floatingBtn.className = "simple-eng-ui simple-eng-floating-container simple-eng-hidden";
     floatingBtn.innerHTML = `
-      <span class="simple-eng-btn-icon">⚡</span>
-      <span class="simple-eng-btn-text">Simplify</span>
+      <div id="simple-eng-floating-simplify" class="simple-eng-floating-action">
+        <span class="simple-eng-btn-icon">⚡</span>
+        <span class="simple-eng-btn-text">Simplify</span>
+      </div>
+      <div id="simple-eng-floating-listen" class="simple-eng-floating-action" title="Listen (ElevenLabs TTS)">
+        <span class="simple-eng-btn-icon">🔊</span>
+        <span class="simple-eng-btn-text">Listen</span>
+      </div>
     `;
     document.body.appendChild(floatingBtn);
 
@@ -200,8 +206,8 @@
       }, 50);
     });
 
-    // Handle Floating Button Click
-    floatingBtn.addEventListener("click", (e) => {
+    // Handle Simplify Click
+    floatingBtn.querySelector("#simple-eng-floating-simplify").addEventListener("click", (e) => {
       e.stopPropagation();
       hideFloatingBtn();
 
@@ -596,14 +602,22 @@
 
   // Delegated click handler for all 🔊 TTS buttons on the page
   document.addEventListener("click", (e) => {
-    const btn = e.target.closest(".simple-eng-tts-btn");
+    const btn = e.target.closest(".simple-eng-tts-btn, #simple-eng-floating-listen");
     if (!btn) return;
     e.stopPropagation();
     e.preventDefault();
 
-    const text = btn.dataset.ttsText;
+    let text = btn.dataset.ttsText;
+    let uiBtn = btn;
+    
+    // If it's the floating listen button, grab the highlighted text
+    if (btn.id === "simple-eng-floating-listen") {
+      text = currentSelectionRange ? currentSelectionRange.toString().trim() : "";
+      uiBtn = btn.querySelector(".simple-eng-btn-icon"); // animate just the icon
+    }
+
     if (text) {
-      playTTS(btn, text);
+      playTTS(uiBtn, text);
     }
   });
 
