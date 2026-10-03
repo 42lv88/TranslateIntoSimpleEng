@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   autoSimplify: false,
   // ElevenLabs TTS
   elevenLabsApiKey: "",
-  elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",  // "George" — clear, neutral English
+  elevenLabsVoiceId: "21m00Tcm4TlvDq8ikWAM",  // "Rachel" — premade, works on free tier
   elevenLabsModelId: "eleven_multilingual_v2",
   elevenLabsEnabled: true
 };
@@ -462,7 +462,7 @@ async function elevenLabsTTS(text, settings) {
     throw new Error("ElevenLabs API key not set. Go to Extension Options → ElevenLabs Settings to add your key.");
   }
 
-  const voiceId = settings.elevenLabsVoiceId || "JBFqnCBsd6RMkjVDRZzb";
+  const voiceId = settings.elevenLabsVoiceId || "21m00Tcm4TlvDq8ikWAM";
   const modelId = settings.elevenLabsModelId || "eleven_multilingual_v2";
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
 

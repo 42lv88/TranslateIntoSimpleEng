@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   autoSimplify: false,
   // ElevenLabs TTS
   elevenLabsApiKey: "",
-  elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
+  elevenLabsVoiceId: "21m00Tcm4TlvDq8ikWAM",  // "Rachel" — premade, works on free tier
   elevenLabsModelId: "eleven_multilingual_v2",
   elevenLabsEnabled: true
 };
