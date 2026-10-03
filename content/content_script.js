@@ -127,9 +127,13 @@
     floatingBtn.id = "simple-eng-floating-container";
     floatingBtn.className = "simple-eng-ui simple-eng-floating-container simple-eng-hidden";
     floatingBtn.innerHTML = `
-      <div id="simple-eng-floating-simplify" class="simple-eng-floating-action">
+      <div id="simple-eng-floating-simplify" class="simple-eng-floating-action" title="Simplify Text">
         <span class="simple-eng-btn-icon">⚡</span>
         <span class="simple-eng-btn-text">Simplify</span>
+      </div>
+      <div id="simple-eng-floating-define" class="simple-eng-floating-action" title="Dictionary Definition">
+        <span class="simple-eng-btn-icon">📖</span>
+        <span class="simple-eng-btn-text">Define</span>
       </div>
       <div id="simple-eng-floating-listen" class="simple-eng-floating-action" title="Listen (ElevenLabs TTS)">
         <span class="simple-eng-btn-icon">🔊</span>
@@ -192,12 +196,24 @@
         const selection = window.getSelection();
         const selectedText = selection ? selection.toString().trim() : "";
 
-        if (selectedText.length >= 5) {
+        if (selectedText.length >= 2) {
           const range = selection.getRangeAt(0);
           const rect = range.getBoundingClientRect();
 
           if (rect && rect.width > 0 && rect.height > 0) {
             currentSelectionRange = range.cloneRange();
+            
+            // Show/hide buttons based on word count
+            const wordCount = selectedText.split(/\s+/).length;
+            const simplifyBtn = floatingBtn.querySelector("#simple-eng-floating-simplify");
+            const defineBtn = floatingBtn.querySelector("#simple-eng-floating-define");
+            
+            if (wordCount <= 4) {
+              defineBtn.style.display = "flex";
+            } else {
+              defineBtn.style.display = "none";
+            }
+            
             positionFloatingBtn(rect);
             return;
           }
@@ -215,6 +231,18 @@
         const textToSimplify = currentSelectionRange.toString().trim();
         const rect = currentSelectionRange.getBoundingClientRect();
         showTooltipForSelection(textToSimplify, rect);
+      }
+    });
+
+    // Handle Define Click
+    floatingBtn.querySelector("#simple-eng-floating-define").addEventListener("click", (e) => {
+      e.stopPropagation();
+      hideFloatingBtn();
+
+      if (currentSelectionRange) {
+        const textToDefine = currentSelectionRange.toString().trim();
+        const rect = currentSelectionRange.getBoundingClientRect();
+        showTooltipForDefinition(textToDefine, rect);
       }
     });
 
@@ -294,6 +322,52 @@
         contentEl.innerHTML = ttsBtnHtml + escapeHtml(response.result);
         contentEl.style.display = "block";
         footer.style.display = "flex";
+      } else {
+        const errMsg = (response && response.error) ? response.error : "Extension reloaded — please refresh this page (F5).";
+        contentEl.innerHTML = `<span class="simple-eng-error">Error: ${escapeHtml(errMsg)}</span>`;
+        contentEl.style.display = "block";
+      }
+    });
+  }
+
+  // Show Tooltip Popup for Dictionary Definition
+  function showTooltipForDefinition(text, rect) {
+    const top = window.scrollY + rect.bottom + 10;
+    const left = Math.min(window.scrollX + rect.left, window.innerWidth - 380);
+
+    tooltipEl.style.top = `${Math.max(10, top)}px`;
+    tooltipEl.style.left = `${Math.max(10, left)}px`;
+
+    const spinner = tooltipEl.querySelector(".simple-eng-spinner-container");
+    const contentEl = tooltipEl.querySelector(".simple-eng-tooltip-content");
+    const footer = tooltipEl.querySelector(".simple-eng-tooltip-footer");
+
+    spinner.querySelector("span").textContent = "Looking up definition...";
+    spinner.style.display = "flex";
+    contentEl.style.display = "none";
+    footer.style.display = "none";
+    contentEl.textContent = "";
+
+    tooltipEl.classList.remove("simple-eng-hidden");
+
+    safeMessage({ action: "DEFINE_TEXT", text: text }, (response) => {
+      spinner.style.display = "none";
+      spinner.querySelector("span").textContent = "Translating with local Gemma 2B..."; // reset
+
+      if (response && response.success) {
+        // Convert simple markdown to HTML (bold and lists)
+        let formattedText = escapeHtml(response.result)
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n(\d+\.)/g, '<br><br>$1')
+          .replace(/\n/g, '<br>');
+
+        const ttsBtnHtml = extensionSettings.elevenLabsEnabled
+          ? `<button class="simple-eng-tts-btn simple-eng-ui" data-tts-text="${escapeAttr(text)}" title="Listen (ElevenLabs TTS)" style="float: right; margin-top: -4px;">🔊</button>`
+          : "";
+
+        contentEl.innerHTML = ttsBtnHtml + formattedText;
+        contentEl.style.display = "block";
+        // Do not show the Replace/Copy footer for dictionary lookups
       } else {
         const errMsg = (response && response.error) ? response.error : "Extension reloaded — please refresh this page (F5).";
         contentEl.innerHTML = `<span class="simple-eng-error">Error: ${escapeHtml(errMsg)}</span>`;

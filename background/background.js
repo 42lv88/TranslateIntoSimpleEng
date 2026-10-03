@@ -335,6 +335,33 @@ async function checkHealth(endpoint) {
   }
 }
 
+// Handle Dictionary Definition (Bypasses Cache)
+async function handleDefineText(text, settingsOverride) {
+  const settings = settingsOverride || await getSettings();
+  const dictionaryPrompt = `You are a dictionary. Define the word or phrase: '${text}'.
+Provide the phonetic pronunciation, part of speech, and 1-2 clear definitions in simple English.
+Format exactly like this example:
+**word** (/wɜːrd/)
+*noun*
+1. a single distinct meaningful element of speech or writing.
+
+Do NOT add any greetings, preamble, or conversational text. Output ONLY the formatted definition.`;
+
+  // We override the system prompt for the dictionary feature
+  const dictSettings = {
+    ...settings,
+    systemPrompt: dictionaryPrompt,
+    temperature: 0.1 // very low temperature for factual definitions
+  };
+
+  try {
+    const result = await callLocalLLM(text, dictSettings);
+    return { success: true, result: result };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
 // Process single simplification request with caching
 async function handleSimplifyText(text, settingsOverride) {
   if (!text || text.trim().length === 0) {
@@ -423,6 +450,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "GET_SETTINGS") {
     getSettings().then(s => sendResponse(s));
+    return true;
+  }
+
+  // --- Dictionary Feature ---
+  if (message.action === "DEFINE_TEXT") {
+    (async () => {
+      try {
+        const settings = await getSettings();
+        const definition = await handleDefineText(message.text, settings);
+        sendResponse(definition);
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
     return true;
   }
 
