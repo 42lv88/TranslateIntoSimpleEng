@@ -369,6 +369,12 @@
       spinner.querySelector("span").textContent = "Translating with local Gemma 2B..."; // reset
 
       if (response && response.success) {
+        if (!response.result || response.result.trim() === "") {
+          contentEl.innerHTML = `<span class="simple-eng-error">Error: Model returned an empty definition.</span>`;
+          contentEl.style.display = "block";
+          return;
+        }
+
         // Convert simple markdown to HTML (bold and lists)
         let formattedText = escapeHtml(response.result)
           .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')

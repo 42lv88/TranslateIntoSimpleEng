@@ -238,9 +238,14 @@ async function callLocalLLM(text, settings) {
   } else {
     // Default Ollama Native API: /api/generate
     url = `${endpoint}/api/generate`;
+    // Allow overriding the entire prompt structure
+    const promptString = settings.promptTemplate 
+      ? settings.promptTemplate.replace("{{text}}", text).replace("{{systemPrompt}}", systemPrompt)
+      : `${systemPrompt}\n\nOriginal Text:\n${text}\n\nSimplified Text:`;
+
     payload = {
       model: model,
-      prompt: `${systemPrompt}\n\nOriginal Text:\n${text}\n\nSimplified Text:`,
+      prompt: promptString,
       stream: false,
       options: {
         temperature: temperature
@@ -357,7 +362,8 @@ Do NOT add any greetings, preamble, or conversational text. Output ONLY the form
   const dictSettings = {
     ...settings,
     systemPrompt: dictionaryPrompt,
-    temperature: 0.1 // very low temperature for factual definitions
+    temperature: 0.1, // very low temperature for factual definitions
+    promptTemplate: `{{systemPrompt}}\n\nWord to define:\n{{text}}\n\nDefinition:`
   };
 
   try {
