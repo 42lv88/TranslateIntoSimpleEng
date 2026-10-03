@@ -6,8 +6,8 @@ const DEFAULT_SETTINGS = {
   endpoint: "http://localhost:11434",
   model: "gemma2:2b",
   provider: "ollama",
-  temperature: 0.1,
-  systemPrompt: "Do not use 'Sure, here is the simplified text:' or any other prefix. You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Start your response with the first word of the simplified text directly.",
+  temperature: 0.2,
+  systemPrompt: "Simplify the following text into clear, simple English. Use simple vocabulary, short sentences, and direct active voice. Preserve the original meaning. Do NOT add preamble, intro notes, conversational text, or quotes. Output ONLY the simplified text.",
   replacementMode: "replace",
   showFloatingButton: true,
   autoSimplify: false

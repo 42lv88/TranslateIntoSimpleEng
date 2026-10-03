@@ -7,7 +7,7 @@ const DEFAULT_SETTINGS = {
   model: "gemma2:2b",
   provider: "ollama",
   temperature: 0.1,
-  systemPrompt: "Do not use 'Sure, here is the simplified text:' or any other prefix. You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Start your response with the first word of the simplified text directly.",
+  systemPrompt: "You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Do not write 'Sure', 'Here is', 'Simplified text:', 'Of course' or any similar phrase. Start your response with the first word of the simplified text directly.",
   replacementMode: "replace",
   showFloatingButton: true,
   autoSimplify: false
@@ -207,15 +207,14 @@ function cleanSimplifiedText(rawText) {
 // Call Ollama / Local API
 async function callLocalLLM(text, settings) {
   const endpoint = settings.endpoint.replace(/\/+$/, "");
-  const model = settings.model || "gemma2:2b";
+  const model = settings.model || "gemma:2b";
   const systemPrompt = settings.systemPrompt || DEFAULT_SETTINGS.systemPrompt;
-  const temperature = settings.temperature !== undefined ? parseFloat(settings.temperature) : 0.1;
+  const temperature = settings.temperature !== undefined ? parseFloat(settings.temperature) : 0.2;
 
   let url = "";
   let payload = {};
 
   if (settings.provider === "openai_compatible") {
-    // OpenAI-compatible API (LM Studio, LocalAI, etc.)
     url = `${endpoint}/v1/chat/completions`;
     payload = {
       model: model,
@@ -223,19 +222,14 @@ async function callLocalLLM(text, settings) {
         { role: "system", content: systemPrompt },
         { role: "user", content: text }
       ],
-      temperature: temperature,
-      stream: false
+      temperature: temperature
     };
   } else {
-    // Ollama Native Chat API — /api/chat properly handles system prompts
-    // for instruction-tuned models like gemma2:2b (unlike /api/generate)
-    url = `${endpoint}/api/chat`;
+    // Default Ollama Native API: /api/generate
+    url = `${endpoint}/api/generate`;
     payload = {
       model: model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: text }
-      ],
+      prompt: `${systemPrompt}\n\nOriginal Text:\n${text}\n\nSimplified Text:`,
       stream: false,
       options: {
         temperature: temperature
@@ -289,12 +283,9 @@ async function callLocalLLM(text, settings) {
     let rawOutput = "";
 
     if (settings.provider === "openai_compatible") {
-      // OpenAI: { choices: [{ message: { content: "..." } }] }
-      rawOutput = data.choices?.[0]?.message?.content || "";
+      rawOutput = data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : "";
     } else {
-      // Ollama /api/chat: { message: { role: "assistant", content: "..." } }
-      // Ollama /api/generate (legacy fallback): { response: "..." }
-      rawOutput = data.message?.content || data.response || "";
+      rawOutput = data.response || "";
     }
 
     const cleaned = cleanSimplifiedText(rawOutput);
@@ -431,37 +422,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Extension installed / updated setup — also migrates stale settings
+// Extension installed / updated setup
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.get(null, (items) => {
-    const updates = {};
-
-    // First-time install: write all defaults
     if (Object.keys(items).length === 0) {
       chrome.storage.sync.set(DEFAULT_SETTINGS);
-      return;
-    }
-
-    // Migrate stale model name: gemma:2b → gemma2:2b
-    if (items.model === "gemma:2b" || items.model === "gemma2b") {
-      updates.model = "gemma2:2b";
-      console.log("[SimpleEN] Migrated model setting: gemma:2b → gemma2:2b");
-    }
-
-    // Ensure temperature is updated to 0.1 if it was the old 0.2 default
-    if (items.temperature === 0.2) {
-      updates.temperature = 0.1;
-    }
-
-    // Update system prompt if it doesn't start with the new prefix instruction
-    if (!items.systemPrompt || !items.systemPrompt.startsWith("Do not use 'Sure, here is the simplified text:'")) {
-      updates.systemPrompt = DEFAULT_SETTINGS.systemPrompt;
-      console.log("[SimpleEN] Migrated system prompt to include prefix restriction");
-    }
-
-    if (Object.keys(updates).length > 0) {
-      chrome.storage.sync.set(updates);
-      console.log("[SimpleEN] Settings migrated:", updates);
     }
   });
 });
