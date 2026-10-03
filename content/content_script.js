@@ -423,10 +423,22 @@
           if (extensionSettings.replacementMode === "side_by_side") {
             el.innerHTML = `
               <div class="simple-eng-original-block">${el.dataset.simpleEngOriginal}</div>
-              <div class="simple-eng-side-block"><span class="simple-eng-badge">Simple EN</span> ${escapeHtml(item.result)} ${ttsBtn}</div>
+              <div class="simple-eng-side-block">
+                <div style="float: right; display: flex; align-items: center; margin: 0 0 5px 10px;">
+                  <span class="simple-eng-badge">Simple EN</span>
+                  ${ttsBtn}
+                </div>
+                <div style="display: flow-root;">${escapeHtml(item.result)}</div>
+              </div>
             `;
           } else {
-            el.innerHTML = `<span class="simple-eng-badge" title="Original text saved. Click 'Restore' to undo.">Simple EN</span> ${escapeHtml(item.result)} ${ttsBtn}`;
+            el.innerHTML = `
+              <div style="float: right; display: flex; align-items: center; margin: 0 0 5px 10px;">
+                <span class="simple-eng-badge" title="Original text saved. Click 'Restore' to undo.">Simple EN</span>
+                ${ttsBtn}
+              </div>
+              <div style="display: flow-root;">${escapeHtml(item.result)}</div>
+            `;
           }
           el.classList.add("simple-eng-translated-element");
         }
