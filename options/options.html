@@ -93,6 +93,56 @@
           </select>
         </div>
       </div>
+      <!-- Section 4: ElevenLabs TTS -->
+      <div class="card">
+        <h2>🔊 ElevenLabs Text-to-Speech</h2>
+
+        <div class="form-group checkbox-group">
+          <label>
+            <input type="checkbox" id="elevenLabsEnabled">
+            <span>Enable voice playback (🔊 button) on simplified sections</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="elevenLabsApiKey">ElevenLabs API Key</label>
+          <input type="password" id="elevenLabsApiKey" placeholder="xi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+          <small>Get your key from <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank">elevenlabs.io/app/settings/api-keys</a>. Stored locally in Chrome sync storage.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="elevenLabsVoiceId">Voice</label>
+          <div class="input-with-btn">
+            <select id="elevenLabsVoiceId">
+              <option value="JBFqnCBsd6RMkjVDRZzb">George (neutral, clear)</option>
+              <option value="21m00Tcm4TlvDq8ikWAM">Rachel (female, calm)</option>
+              <option value="EXAVITQu4vr4xnSDxMaL">Bella (female, soft)</option>
+              <option value="ErXwobaYiN019PkySvjV">Antoni (male, conversational)</option>
+              <option value="MF3mGyEYCl7XYWbV9V6O">Elli (female, young)</option>
+              <option value="TxGEqnHWrfWFTfGW9XjX">Josh (male, deep)</option>
+              <option value="pNInz6obpgDQGcFmaJgB">Adam (male, deep)</option>
+              <option value="yoZ06aMxZJJ28mfd3POQ">Sam (male, warm)</option>
+            </select>
+            <button type="button" id="fetchVoicesBtn" class="btn btn-secondary">Fetch My Voices</button>
+          </div>
+          <small>Select a voice from defaults, or fetch your ElevenLabs voice library.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="elevenLabsModelId">TTS Model</label>
+          <select id="elevenLabsModelId">
+            <option value="eleven_multilingual_v2">Multilingual v2 (best quality)</option>
+            <option value="eleven_turbo_v2_5">Turbo v2.5 (low latency)</option>
+            <option value="eleven_turbo_v2">Turbo v2 (fast)</option>
+            <option value="eleven_monolingual_v1">Monolingual v1 (English only)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <button type="button" id="testTtsBtn" class="btn btn-secondary">🔊 Test TTS</button>
+          <span id="ttsStatus" class="conn-status"></span>
+        </div>
+      </div>
 
       <!-- Actions -->
       <div class="form-actions">

@@ -1,16 +1,21 @@
 /**
- * Options Script for Simple English Translator (Gemma 2B)
+ * Options Script for Simple English Translator (Gemma 2B + ElevenLabs TTS)
  */
 
 const DEFAULT_SETTINGS = {
   endpoint: "http://localhost:11434",
   model: "gemma2:2b",
   provider: "ollama",
-  temperature: 0.2,
-  systemPrompt: "Simplify the following text into clear, simple English. Use simple vocabulary, short sentences, and direct active voice. Preserve the original meaning. Do NOT add preamble, intro notes, conversational text, or quotes. Output ONLY the simplified text.",
+  temperature: 0.1,
+  systemPrompt: "You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Do not write 'Sure', 'Here is', 'Simplified text:', 'Of course' or any similar phrase. Start your response with the first word of the simplified text directly.",
   replacementMode: "replace",
   showFloatingButton: true,
-  autoSimplify: false
+  autoSimplify: false,
+  // ElevenLabs TTS
+  elevenLabsApiKey: "",
+  elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",
+  elevenLabsModelId: "eleven_multilingual_v2",
+  elevenLabsEnabled: true
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -30,6 +35,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveStatus = document.getElementById("saveStatus");
   const resetBtn = document.getElementById("resetBtn");
 
+  // ElevenLabs elements
+  const elevenLabsEnabledCheckbox = document.getElementById("elevenLabsEnabled");
+  const elevenLabsApiKeyInput = document.getElementById("elevenLabsApiKey");
+  const elevenLabsVoiceSelect = document.getElementById("elevenLabsVoiceId");
+  const elevenLabsModelSelect = document.getElementById("elevenLabsModelId");
+  const fetchVoicesBtn = document.getElementById("fetchVoicesBtn");
+  const testTtsBtn = document.getElementById("testTtsBtn");
+  const ttsStatus = document.getElementById("ttsStatus");
+
   // Load existing settings
   loadSettings();
 
@@ -44,6 +58,12 @@ document.addEventListener("DOMContentLoaded", () => {
       showFloatingBtnCheckbox.checked = !!settings.showFloatingButton;
       autoSimplifyCheckbox.checked = !!settings.autoSimplify;
       replacementModeSelect.value = settings.replacementMode || DEFAULT_SETTINGS.replacementMode;
+
+      // ElevenLabs
+      elevenLabsEnabledCheckbox.checked = settings.elevenLabsEnabled !== false;
+      elevenLabsApiKeyInput.value = settings.elevenLabsApiKey || "";
+      elevenLabsVoiceSelect.value = settings.elevenLabsVoiceId || DEFAULT_SETTINGS.elevenLabsVoiceId;
+      elevenLabsModelSelect.value = settings.elevenLabsModelId || DEFAULT_SETTINGS.elevenLabsModelId;
     });
   }
 
@@ -82,7 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
         connStatus.textContent = `Found models: ${res.models.join(", ")}`;
         connStatus.className = "conn-status success";
 
-        // Auto select gemma model if found
         const gemmaModel = res.models.find(m => m.includes("gemma"));
         if (gemmaModel) {
           modelInput.value = gemmaModel;
@@ -93,6 +112,88 @@ document.addEventListener("DOMContentLoaded", () => {
         connStatus.textContent = "No models found or connection failed.";
         connStatus.className = "conn-status error";
       }
+    });
+  });
+
+  // --- ElevenLabs: Fetch Voices ---
+  fetchVoicesBtn.addEventListener("click", () => {
+    ttsStatus.textContent = "Fetching voices...";
+    ttsStatus.className = "conn-status pending";
+
+    // Temporarily save the API key so the background can use it
+    chrome.storage.sync.set({ elevenLabsApiKey: elevenLabsApiKeyInput.value.trim() }, () => {
+      chrome.runtime.sendMessage({ action: "LIST_VOICES" }, (res) => {
+        if (res && res.success && res.voices && res.voices.length > 0) {
+          ttsStatus.textContent = `Found ${res.voices.length} voices!`;
+          ttsStatus.className = "conn-status success";
+
+          // Remember current selection
+          const currentVal = elevenLabsVoiceSelect.value;
+
+          // Clear and repopulate
+          elevenLabsVoiceSelect.innerHTML = "";
+          res.voices.forEach(v => {
+            const opt = document.createElement("option");
+            opt.value = v.voice_id;
+            opt.textContent = `${v.name} (${v.category})`;
+            elevenLabsVoiceSelect.appendChild(opt);
+          });
+
+          // Restore selection if still available
+          if ([...elevenLabsVoiceSelect.options].some(o => o.value === currentVal)) {
+            elevenLabsVoiceSelect.value = currentVal;
+          }
+        } else {
+          const err = (res && res.error) ? res.error : "Failed to fetch voices.";
+          ttsStatus.textContent = err;
+          ttsStatus.className = "conn-status error";
+        }
+      });
+    });
+  });
+
+  // --- ElevenLabs: Test TTS ---
+  testTtsBtn.addEventListener("click", () => {
+    const apiKey = elevenLabsApiKeyInput.value.trim();
+    if (!apiKey) {
+      ttsStatus.textContent = "Please enter your ElevenLabs API key first.";
+      ttsStatus.className = "conn-status error";
+      return;
+    }
+
+    ttsStatus.textContent = "Generating speech...";
+    ttsStatus.className = "conn-status pending";
+    testTtsBtn.disabled = true;
+
+    // Save settings temporarily so background can use them
+    chrome.storage.sync.set({
+      elevenLabsApiKey: apiKey,
+      elevenLabsVoiceId: elevenLabsVoiceSelect.value,
+      elevenLabsModelId: elevenLabsModelSelect.value
+    }, () => {
+      chrome.runtime.sendMessage(
+        { action: "TTS_SPEAK", text: "Hello! This is a test of the Simple English Translator voice feature, powered by ElevenLabs." },
+        (res) => {
+          testTtsBtn.disabled = false;
+          if (res && res.success && res.audio) {
+            ttsStatus.textContent = "Playing test audio...";
+            ttsStatus.className = "conn-status success";
+
+            const audio = new Audio(res.audio);
+            audio.play().catch(err => {
+              ttsStatus.textContent = `Playback failed: ${err.message}`;
+              ttsStatus.className = "conn-status error";
+            });
+            audio.addEventListener("ended", () => {
+              ttsStatus.textContent = "TTS working!";
+            });
+          } else {
+            const err = (res && res.error) ? res.error : "TTS test failed.";
+            ttsStatus.textContent = err;
+            ttsStatus.className = "conn-status error";
+          }
+        }
+      );
     });
   });
 
@@ -108,7 +209,12 @@ document.addEventListener("DOMContentLoaded", () => {
       temperature: parseFloat(temperatureInput.value),
       showFloatingButton: showFloatingBtnCheckbox.checked,
       autoSimplify: autoSimplifyCheckbox.checked,
-      replacementMode: replacementModeSelect.value
+      replacementMode: replacementModeSelect.value,
+      // ElevenLabs
+      elevenLabsEnabled: elevenLabsEnabledCheckbox.checked,
+      elevenLabsApiKey: elevenLabsApiKeyInput.value.trim(),
+      elevenLabsVoiceId: elevenLabsVoiceSelect.value,
+      elevenLabsModelId: elevenLabsModelSelect.value
     };
 
     chrome.storage.sync.set(newSettings, () => {

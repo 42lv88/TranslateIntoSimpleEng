@@ -221,3 +221,50 @@
   color: #dc2626 !important;
   font-size: 13px !important;
 }
+
+/* ElevenLabs TTS Listen Button */
+.simple-eng-tts-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  margin-left: 6px !important;
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+  border-radius: 50% !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  vertical-align: middle !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
+  transition: background 0.15s ease, transform 0.1s ease !important;
+  line-height: 1 !important;
+}
+
+.simple-eng-tts-btn:hover {
+  background: #334155 !important;
+  transform: scale(1.1) !important;
+}
+
+.simple-eng-tts-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.simple-eng-tts-loading {
+  opacity: 0.7 !important;
+  cursor: wait !important;
+  animation: simple-eng-pulse-tts 1s ease-in-out infinite !important;
+}
+
+.simple-eng-tts-playing {
+  background: #16a34a !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.4) !important;
+}
+
+@keyframes simple-eng-pulse-tts {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}

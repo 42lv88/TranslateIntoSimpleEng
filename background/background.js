@@ -10,7 +10,12 @@ const DEFAULT_SETTINGS = {
   systemPrompt: "You are a plain text simplifier. Rewrite the given text using simple words and short sentences. Keep the same meaning. Output ONLY the simplified text with absolutely no introduction, greeting, explanation, note, label, or commentary before or after it. Do not write 'Sure', 'Here is', 'Simplified text:', 'Of course' or any similar phrase. Start your response with the first word of the simplified text directly.",
   replacementMode: "replace",
   showFloatingButton: true,
-  autoSimplify: false
+  autoSimplify: false,
+  // ElevenLabs TTS
+  elevenLabsApiKey: "",
+  elevenLabsVoiceId: "JBFqnCBsd6RMkjVDRZzb",  // "George" — clear, neutral English
+  elevenLabsModelId: "eleven_multilingual_v2",
+  elevenLabsEnabled: true
 };
 
 // In-memory cache for fast lookup during session
@@ -420,6 +425,137 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getSettings().then(s => sendResponse(s));
     return true;
   }
+
+  // --- ElevenLabs TTS ---
+  if (message.action === "TTS_SPEAK") {
+    (async () => {
+      try {
+        const settings = await getSettings();
+        const audioData = await elevenLabsTTS(message.text, settings);
+        sendResponse({ success: true, audio: audioData });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+
+  if (message.action === "LIST_VOICES") {
+    (async () => {
+      try {
+        const settings = await getSettings();
+        const voices = await elevenLabsListVoices(settings);
+        sendResponse({ success: true, voices });
+      } catch (err) {
+        sendResponse({ success: false, error: err.message });
+      }
+    })();
+    return true;
+  }
+});
+
+// --- ElevenLabs TTS API ---
+
+async function elevenLabsTTS(text, settings) {
+  const apiKey = settings.elevenLabsApiKey;
+  if (!apiKey) {
+    throw new Error("ElevenLabs API key not set. Go to Extension Options → ElevenLabs Settings to add your key.");
+  }
+
+  const voiceId = settings.elevenLabsVoiceId || "JBFqnCBsd6RMkjVDRZzb";
+  const modelId = settings.elevenLabsModelId || "eleven_multilingual_v2";
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "xi-api-key": apiKey
+    },
+    body: JSON.stringify({
+      text: text,
+      model_id: modelId,
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.75,
+        style: 0.0,
+        use_speaker_boost: true
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const errBody = await response.text();
+    if (response.status === 401) {
+      throw new Error("Invalid ElevenLabs API key. Check your key in Extension Options.");
+    }
+    if (response.status === 422) {
+      throw new Error("Text too long or invalid for ElevenLabs TTS.");
+    }
+    throw new Error(`ElevenLabs API error (${response.status}): ${errBody}`);
+  }
+
+  // Convert audio response to base64 data URL for playback in content script
+  const arrayBuffer = await response.arrayBuffer();
+  const base64 = arrayBufferToBase64(arrayBuffer);
+  return `data:audio/mpeg;base64,${base64}`;
+}
+
+async function elevenLabsListVoices(settings) {
+  const apiKey = settings.elevenLabsApiKey;
+  if (!apiKey) {
+    throw new Error("ElevenLabs API key not set.");
+  }
+
+  const response = await fetch("https://api.elevenlabs.io/v1/voices", {
+    method: "GET",
+    headers: { "xi-api-key": apiKey }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch voices (${response.status})`);
+  }
+
+  const data = await response.json();
+  return (data.voices || []).map(v => ({
+    voice_id: v.voice_id,
+    name: v.name,
+    category: v.category || "unknown",
+    preview_url: v.preview_url
+  }));
+}
+
+function arrayBufferToBase64(buffer) {
+  let binary = "";
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+// Also handle TTS via long-lived port
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "tts-port") return;
+  activePorts.add(port);
+  startKeepAlive();
+
+  port.onDisconnect.addListener(() => {
+    activePorts.delete(port);
+    stopKeepAlive();
+  });
+
+  port.onMessage.addListener(async (message) => {
+    if (message.action === "TTS_SPEAK_PORT") {
+      try {
+        const settings = await getSettings();
+        const audioData = await elevenLabsTTS(message.text, settings);
+        try { port.postMessage({ type: "TTS_RESULT", success: true, audio: audioData, id: message.id }); } catch (e) {}
+      } catch (err) {
+        try { port.postMessage({ type: "TTS_RESULT", success: false, error: err.message, id: message.id }); } catch (e) {}
+      }
+    }
+  });
 });
 
 // Extension installed / updated setup

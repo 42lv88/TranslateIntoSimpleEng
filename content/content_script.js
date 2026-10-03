@@ -410,13 +410,18 @@
           totalSuccessCount++;
           translatedElements.set(el, el.dataset.simpleEngOriginal);
 
+          // Build the TTS listen button HTML
+          const ttsBtn = extensionSettings.elevenLabsEnabled
+            ? `<button class="simple-eng-tts-btn simple-eng-ui" data-tts-text="${escapeAttr(item.result)}" title="Listen (ElevenLabs TTS)">🔊</button>`
+            : "";
+
           if (extensionSettings.replacementMode === "side_by_side") {
             el.innerHTML = `
               <div class="simple-eng-original-block">${el.dataset.simpleEngOriginal}</div>
-              <div class="simple-eng-side-block"><span class="simple-eng-badge">Simple EN</span> ${escapeHtml(item.result)}</div>
+              <div class="simple-eng-side-block"><span class="simple-eng-badge">Simple EN</span> ${escapeHtml(item.result)} ${ttsBtn}</div>
             `;
           } else {
-            el.innerHTML = `<span class="simple-eng-badge" title="Original text saved. Click 'Restore' to undo.">Simple EN</span> ${escapeHtml(item.result)}`;
+            el.innerHTML = `<span class="simple-eng-badge" title="Original text saved. Click 'Restore' to undo.">Simple EN</span> ${escapeHtml(item.result)} ${ttsBtn}`;
           }
           el.classList.add("simple-eng-translated-element");
         }
@@ -462,6 +467,129 @@
       .replace(/'/g, "&#039;");
   }
 
+  // Helper to escape for HTML attributes (data-tts-text="...")
+  function escapeAttr(str) {
+    if (!str) return "";
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n/g, " ");
+  }
+
+  // --- ElevenLabs TTS Audio Player ---
+  let currentAudio = null;
+  let currentTtsBtn = null;
+  let ttsPort = null;
+  let ttsCallbacks = {};
+
+  function getTtsPort() {
+    if (!isExtensionAlive()) return null;
+    if (ttsPort) return ttsPort;
+    try {
+      ttsPort = chrome.runtime.connect({ name: "tts-port" });
+      ttsPort.onDisconnect.addListener(() => {
+        ttsPort = null;
+        Object.values(ttsCallbacks).forEach(cb => cb({ success: false, error: "Connection lost" }));
+        ttsCallbacks = {};
+      });
+      ttsPort.onMessage.addListener((msg) => {
+        if (msg.type === "TTS_RESULT" && ttsCallbacks[msg.id]) {
+          const cb = ttsCallbacks[msg.id];
+          delete ttsCallbacks[msg.id];
+          cb(msg);
+        }
+      });
+    } catch (e) {
+      ttsPort = null;
+    }
+    return ttsPort;
+  }
+
+  function requestTTS(text, callback) {
+    const p = getTtsPort();
+    if (!p) {
+      // Fallback to safeMessage
+      safeMessage({ action: "TTS_SPEAK", text }, callback);
+      return;
+    }
+    const id = "tts_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    ttsCallbacks[id] = callback;
+    try { p.postMessage({ action: "TTS_SPEAK_PORT", text, id }); }
+    catch (e) { callback({ success: false, error: e.message }); }
+  }
+
+  function stopCurrentAudio() {
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+      currentAudio = null;
+    }
+    if (currentTtsBtn) {
+      currentTtsBtn.textContent = "🔊";
+      currentTtsBtn.classList.remove("simple-eng-tts-playing");
+      currentTtsBtn = null;
+    }
+  }
+
+  function playTTS(btn, text) {
+    // If this button is already playing, stop it
+    if (currentTtsBtn === btn && currentAudio && !currentAudio.paused) {
+      stopCurrentAudio();
+      return;
+    }
+
+    // Stop any previous audio
+    stopCurrentAudio();
+
+    // Show loading state
+    btn.textContent = "⏳";
+    btn.classList.add("simple-eng-tts-loading");
+    currentTtsBtn = btn;
+
+    requestTTS(text, (response) => {
+      btn.classList.remove("simple-eng-tts-loading");
+
+      if (response && response.success && response.audio) {
+        btn.textContent = "⏹️";
+        btn.classList.add("simple-eng-tts-playing");
+
+        currentAudio = new Audio(response.audio);
+        currentAudio.play().catch(err => {
+          showToast(`Audio playback failed: ${err.message}`, "error");
+          btn.textContent = "🔊";
+          btn.classList.remove("simple-eng-tts-playing");
+        });
+
+        currentAudio.addEventListener("ended", () => {
+          btn.textContent = "🔊";
+          btn.classList.remove("simple-eng-tts-playing");
+          currentAudio = null;
+          currentTtsBtn = null;
+        });
+      } else {
+        btn.textContent = "🔊";
+        const err = (response && response.error) ? response.error : "TTS request failed.";
+        showToast(`TTS Error: ${err}`, "error");
+      }
+    });
+  }
+
+  // Delegated click handler for all 🔊 TTS buttons on the page
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".simple-eng-tts-btn");
+    if (!btn) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const text = btn.dataset.ttsText;
+    if (text) {
+      playTTS(btn, text);
+    }
+  });
+
   // Listen for popup action commands — guarded against invalidated context
   try {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -470,6 +598,7 @@
         simplifyVisiblePage();
         sendResponse({ success: true });
       } else if (message.action === "RESTORE_PAGE") {
+        stopCurrentAudio();
         restoreOriginalPage();
         sendResponse({ success: true });
       } else if (message.action === "UPDATE_SETTINGS") {
