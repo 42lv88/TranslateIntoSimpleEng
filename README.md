@@ -92,6 +92,14 @@ TranslateIntoSimpleEng/
 └── README.md                  # Documentation
 ```
 
+
+https://github.com/user-attachments/assets/2ba77b66-21f0-4403-8512-34a0af3d7836
+
+
+
+https://github.com/user-attachments/assets/1dbf0485-2fc3-402f-9909-43039a9c1119
+
+
 ---
 
 ## License 📄
